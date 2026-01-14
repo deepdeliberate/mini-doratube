@@ -2,9 +2,9 @@ spring:
   application:
     name: mini-doratube
   datasource:
-    url: jdbc:postgresql://localhost:5432/mini-doratube
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5432/mini_youtube
+    username: namandeep
+    password: ""
   jpa:
     hibernate:
       ddl-auto: update

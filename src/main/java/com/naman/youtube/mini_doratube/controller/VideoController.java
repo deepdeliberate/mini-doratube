@@ -28,4 +28,22 @@ public class VideoController {
     public VideoResponse getVideo(@PathVariable UUID videoId){
         return videoService.getVideo(videoId);
     }
+
+    @PostMapping("/{videoId}/view")
+    public String incrementView(@PathVariable UUID videoId){
+        videoService.incrementView(videoId);
+        return "View incremented!";
+    }
+
+    @GetMapping("/{videoId}/views")
+    public long getViews(@PathVariable UUID videoId){
+        return videoService.getViewCount(videoId);
+    }
+
+    @GetMapping("/{videoId}/upload-url")
+    public String getUploadUrl(@PathVariable UUID videoId) throws Exception{
+        return videoService.generateUploadUrl(videoId);
+    }
+
+
 }
