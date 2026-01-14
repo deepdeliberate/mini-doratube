@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: mini-doratube
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mini-doratube
+    username: postgres
+    password: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
