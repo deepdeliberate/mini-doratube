@@ -25,7 +25,8 @@ public class Video {
     private UUID uploaderID;
 
     @Column(nullable = false)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private VideoStatus status;
 
     private Integer duration;
     private Instant createdAt;

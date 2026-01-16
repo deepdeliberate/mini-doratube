@@ -4,6 +4,8 @@ package com.naman.youtube.mini_doratube.service;
 import com.naman.youtube.mini_doratube.dto.CreateVideoRequest;
 import com.naman.youtube.mini_doratube.dto.VideoResponse;
 import com.naman.youtube.mini_doratube.model.Video;
+import com.naman.youtube.mini_doratube.model.VideoStatus;
+import com.naman.youtube.mini_doratube.queue.VideoProcessingQueue;
 import com.naman.youtube.mini_doratube.repository.VideoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -23,6 +25,7 @@ public class VideoService {
     private final VideoRepository videoRepository;
     private final RedisTemplate<String, String > redisTemplate;
     private final MinioClient minioClient;
+    private final VideoProcessingQueue videoProcessingQueue;
 
     public VideoResponse createVideo(CreateVideoRequest request, UUID uploaderId) {
         Video video = Video.builder()
@@ -30,7 +33,7 @@ public class VideoService {
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .uploaderID(uploaderId)
-                .status("UPLOADING")
+                .status(VideoStatus.UPLOADING)
                 .createdAt(Instant.now())
                 .build();
 
@@ -40,7 +43,7 @@ public class VideoService {
                 .videoId(video.getId())
                 .title(video.getTitle())
                 .description(video.getTitle())
-                .status(video.getStatus())
+                .status(video.getStatus().name())
                 .createdAt(video.getCreatedAt())
                 .build();
     }
@@ -53,7 +56,7 @@ public class VideoService {
                 .videoId(video.getId())
                 .title(video.getTitle())
                 .description(video.getDescription())
-                .status(video.getStatus())
+                .status(video.getStatus().name())
                 .createdAt(video.getCreatedAt())
                 .build();
     }
@@ -84,5 +87,16 @@ public class VideoService {
                         .expiry(15*60)
                         .build()
         );
+    }
+
+    public void markUploadComplete(UUID videoId) {
+        Video video = videoRepository.findById(videoId)
+                .orElseThrow( () -> new RuntimeException("Video Not Found!")) ;
+
+        video.setStatus(VideoStatus.PROCESSING);
+        videoRepository.save(video);
+
+        // Publish async job
+        videoProcessingQueue.publish(videoId);
     }
 }

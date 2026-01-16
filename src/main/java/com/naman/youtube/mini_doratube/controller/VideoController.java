@@ -45,5 +45,9 @@ public class VideoController {
         return videoService.generateUploadUrl(videoId);
     }
 
+    @PostMapping("/{videoId}/complete")
+    public void completeUpload(@PathVariable UUID videoId){
+        videoService.markUploadComplete(videoId);
+    }
 
 }
