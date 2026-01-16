@@ -34,6 +34,7 @@ public class VideoProcessingWorker {
             transcode(videoId);
             markReady(videoId);
         } catch (Exception e){
+            e.printStackTrace();
             markFailed(videoId);
         }
     }
@@ -41,11 +42,17 @@ public class VideoProcessingWorker {
     private void transcode(UUID videoId) throws Exception{
         // Download OG Video
         File input = new File("/tmp/" + videoId + ".mp4");
+
+        if(input.exists()){
+            input.delete();
+        }
         File hls360 = new File("/tmp/hls" + videoId + "/360p");
         File hls720 = new File("/tmp/hls" + videoId + "/720p");
+        File hlsDir = new File("/tmp/hls/" + videoId);
 
         hls360.mkdirs();
         hls720.mkdirs();
+        hlsDir.mkdirs();
 
         // 1. Download Original
         minioClient.downloadObject(
@@ -64,6 +71,8 @@ public class VideoProcessingWorker {
 
         uploadDirectory("videos", "hls/" + videoId + "/360p", hls360);
         uploadDirectory("videos", "hls/" + videoId + "/720", hls720);
+
+        generateMasterPlaylist(videoId, hlsDir);
     }
 
     private void runFFmpeg(File input, File outputDir, int height) throws Exception {
@@ -86,6 +95,30 @@ public class VideoProcessingWorker {
         pb.inheritIO();
         Process p = pb.start();
         p.waitFor();
+    }
+
+    private void generateMasterPlaylist(UUID videoID, File hlsDir) throws Exception{
+        File masterFile = new File(hlsDir, "master.m3u8");
+
+        String content = "#EXTM3U\n" +
+                "#EXT-X-VERSION:3\n" +
+                "#EXT-X-STREAM-INF:BANDWIDTH=800000, RESOLUTION=640x360\n"+
+                "360/index.m3u8\n"+
+                "#EXT-X-STREAM-INF:BANDWIDTH=2500000, RESOLUTION=1280x720\n"+
+                "720/index.m3u8\n";
+
+        java.nio.file.Files.write(masterFile.toPath(), content.getBytes());
+
+        minioClient.uploadObject(
+                UploadObjectArgs.builder()
+                        .bucket("videos")
+                        .object("hls/"+videoID+"/master.m3u8")
+                        .filename(masterFile.getAbsolutePath())
+                        .build()
+        );
+
+
+
     }
 
     private void uploadDirectory(String bucket, String prefix, File dir) throws Exception {

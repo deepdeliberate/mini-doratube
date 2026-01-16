@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -14,5 +15,7 @@ public class VideoResponse {
     private String description;
     private String status;
     private Instant createdAt;
+    private Map<String, String> streamURLs;
+    private String masterStreamUrl;
 
 }

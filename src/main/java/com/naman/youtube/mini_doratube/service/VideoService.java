@@ -16,6 +16,7 @@ import io.minio.MinioClient;
 
 import java.time.Instant;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -52,13 +53,30 @@ public class VideoService {
         Video video = videoRepository.findById(videoId)
                 .orElseThrow(()-> new RuntimeException("Video not found"));
 
-        return VideoResponse.builder()
+        VideoResponse response = VideoResponse.builder()
                 .videoId(video.getId())
                 .title(video.getTitle())
                 .description(video.getDescription())
                 .status(video.getStatus().name())
                 .createdAt(video.getCreatedAt())
                 .build();
+
+        if(video.getStatus() == VideoStatus.READY){
+            Map<String, String > urls = Map.of(
+                    "360p", "http://localhost:8081/videos/hls/" + video.getId() + "/360/index.m3u8",
+                    "720p", "http://localhost:8081/videos/hls/" + video.getId() + "/720/index.m3u8"
+
+            );
+            response.setStreamURLs(urls);
+
+            response.setMasterStreamUrl(
+                    "http://localhost:8081/videos/hls/" + video.getId() + "/master.m3u8"
+            );
+        }
+
+        return response;
+
+
     }
 
     public void incrementView(UUID videoId){
